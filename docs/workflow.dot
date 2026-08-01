@@ -1,0 +1,106 @@
+digraph RepoLoopHarness {
+  graph [
+    rankdir=TB,
+    bgcolor="#FFFFFF",
+    pad="0.35",
+    nodesep="0.38",
+    ranksep="0.55",
+    splines=spline,
+    newrank=true,
+    fontname="Helvetica"
+  ];
+
+  node [
+    shape=box,
+    style="rounded,filled",
+    fillcolor="#F8FAFC",
+    color="#334155",
+    fontcolor="#0F172A",
+    fontname="Helvetica",
+    fontsize=11,
+    margin="0.16,0.10"
+  ];
+
+  edge [
+    color="#64748B",
+    fontcolor="#334155",
+    fontname="Helvetica",
+    fontsize=9,
+    arrowsize=0.75
+  ];
+
+  subgraph cluster_inputs {
+    label="Inputs";
+    color="#CBD5E1";
+    style="rounded";
+    repo [label="Repository"];
+    goal [label="Explicit goal"];
+    policy [label="Machine policy"];
+    { rank=same; repo; goal; policy; }
+  }
+
+  subgraph cluster_compile {
+    label="Compile repository";
+    color="#93C5FD";
+    style="rounded";
+    trust [label="Trust and\nquarantine gate", fillcolor="#FEF3C7"];
+    scan [label="Deterministic\nscanner"];
+    capsule [label="RepoCapsule", shape=folder, fillcolor="#DBEAFE"];
+    { rank=same; trust; scan; capsule; }
+    trust -> scan;
+    scan -> capsule;
+  }
+
+  subgraph cluster_runtime {
+    label="Checkpointed loop";
+    color="#86EFAC";
+    style="rounded";
+    controller [label="LangGraph\ncontroller", fillcolor="#DCFCE7"];
+    select [label="Select one\nwork item"];
+    skill [label="Load one\nskill"];
+    plan [label="Bounded plan"];
+    execute [label="Execute in\nisolated worktree"];
+    verify [label="Independent\nverification", fillcolor="#E0F2FE"];
+    decide [label="Goal complete?", shape=diamond, fillcolor="#F1F5F9"];
+    reflect [label="Classify failure\nand change strategy", fillcolor="#FCE7F3"];
+
+    controller -> select;
+    select -> skill;
+    skill -> plan;
+    plan -> execute;
+    execute -> verify;
+    verify -> decide [label="pass"];
+    verify -> reflect [label="recoverable", constraint=false];
+    reflect -> select [label="bounded retry", constraint=false];
+    decide -> select [label="no", constraint=false];
+    { rank=same; select; skill; plan; }
+    { rank=same; execute; verify; decide; }
+  }
+
+  subgraph cluster_controls {
+    label="Controls";
+    color="#D8B4FE";
+    style="rounded";
+    hub [label="Agent Hub\ncapabilities", fillcolor="#F3E8FF"];
+    checkpoints [label="Checkpoint and\nevent ledger", shape=cylinder, fillcolor="#F3E8FF"];
+    watchdog [label="Budget and\nstall watchdog", fillcolor="#FEE2E2"];
+    human [label="Human approval", shape=hexagon, fillcolor="#FEF3C7"];
+    { rank=same; hub; checkpoints; watchdog; human; }
+  }
+
+  complete [label="Verified result", shape=doublecircle, fillcolor="#DCFCE7"];
+  stopped [label="Stopped and\nresumable", shape=octagon, fillcolor="#FEE2E2"];
+  { rank=same; complete; stopped; }
+
+  repo -> trust;
+  goal -> controller;
+  policy -> trust;
+  capsule -> controller;
+  hub -> skill [style=dashed, label="allowlisted", constraint=false];
+  controller -> checkpoints [dir=both, style=dashed, constraint=false];
+  watchdog -> controller [style=dashed, constraint=false];
+  verify -> human [label="approval needed"];
+  human -> execute [label="approved", constraint=false];
+  decide -> complete [label="yes"];
+  controller -> stopped [label="budget, stall,\nconflict, or drift"];
+}
