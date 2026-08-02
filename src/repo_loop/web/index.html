@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark">
+    <title>Repo Loop — Inspection Bench</title>
+    <link rel="stylesheet" href="/app.css">
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#workbench">Skip to repository workbench</a>
+    <header class="masthead">
+      <div class="brand-lockup" aria-label="Repository Loop Agent Harness">
+        <span class="brand-mark" aria-hidden="true">R/L</span>
+        <div>
+          <p class="eyebrow">Repository Loop Agent Harness</p>
+          <p class="product-name">Inspection bench</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <span class="runtime-pill" id="runtime-state">Checking runtime</span>
+        <button class="refresh-button" id="refresh" type="button">
+          <span aria-hidden="true">↻</span> Refresh repository
+        </button>
+      </div>
+    </header>
+
+    <main id="workbench">
+      <section class="repo-intro" aria-labelledby="repository-name">
+        <div class="intro-copy">
+          <p class="section-index">01 / Repository capsule</p>
+          <h1 id="repository-name" data-testid="repository-name">Reading repository…</h1>
+          <p class="repository-path" id="repository-path">Resolving local path</p>
+        </div>
+        <dl class="repo-vitals">
+          <div><dt>Branch</dt><dd id="branch">—</dd></div>
+          <div><dt>Revision</dt><dd id="revision">—</dd></div>
+          <div><dt>Working tree</dt><dd id="working-tree">—</dd></div>
+        </dl>
+      </section>
+
+      <section class="digest-ribbon" aria-label="Capsule identity">
+        <div class="digest-label">
+          <span>Fact digest</span>
+          <strong id="digest-short">Scanning</strong>
+        </div>
+        <code id="digest">—</code>
+        <button class="copy-button" id="copy-digest" type="button">Copy digest</button>
+      </section>
+
+      <div class="workbench-grid">
+        <aside class="capsule-spine" aria-labelledby="capsule-title">
+          <p class="section-index">02 / Contract</p>
+          <h2 id="capsule-title">Capsule</h2>
+          <div class="spine-track" aria-hidden="true"><span></span></div>
+          <dl class="capsule-facts">
+            <div><dt>Identifier</dt><dd id="capsule-id">—</dd></div>
+            <div><dt>Trust</dt><dd><span class="status-tag warning" id="trust">—</span></dd></div>
+            <div><dt>Languages</dt><dd id="languages">—</dd></div>
+            <div><dt>Package tools</dt><dd id="package-tools">—</dd></div>
+          </dl>
+        </aside>
+
+        <div class="ledger-stack">
+          <section class="ledger" aria-labelledby="commands-title">
+            <div class="section-heading">
+              <div>
+                <p class="section-index">03 / Capabilities</p>
+                <h2 id="commands-title">Discovered commands</h2>
+              </div>
+              <span class="count" id="command-count">0</span>
+            </div>
+            <div class="ledger-rows" id="commands" aria-live="polite">
+              <p class="empty-state">Scanning command surfaces…</p>
+            </div>
+          </section>
+
+          <section class="ledger" aria-labelledby="evidence-title">
+            <div class="section-heading">
+              <div>
+                <p class="section-index">04 / Provenance</p>
+                <h2 id="evidence-title">Evidence ledger</h2>
+              </div>
+              <span class="count" id="evidence-count">0</span>
+            </div>
+            <div class="ledger-rows" id="evidence" aria-live="polite">
+              <p class="empty-state">Tracing facts to repository files…</p>
+            </div>
+          </section>
+        </div>
+
+        <aside class="policy-panel" aria-labelledby="policy-title">
+          <p class="section-index">05 / Guardrails</p>
+          <h2 id="policy-title">Policy boundary</h2>
+          <p class="policy-deck">The capsule begins quarantined. Mutation and external effects remain outside this browser.</p>
+
+          <div class="policy-group">
+            <h3>Permissions</h3>
+            <dl id="permissions"></dl>
+          </div>
+          <div class="policy-group">
+            <h3>Loop limits</h3>
+            <dl id="loop-limits"></dl>
+          </div>
+          <div class="policy-group">
+            <h3>Completion requires</h3>
+            <ul class="check-list" id="completion-checks"></ul>
+          </div>
+        </aside>
+      </div>
+    </main>
+
+    <footer>
+      <span>Local only · read-only discovery · no target writes</span>
+      <span id="scan-state" role="status" aria-live="polite">Initial scan</span>
+    </footer>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>

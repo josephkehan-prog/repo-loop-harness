@@ -22,6 +22,7 @@ class DashboardPayloadTests(unittest.TestCase):
             (repository / "pyproject.toml").write_text(
                 "[project]\nname = 'sample'\n", encoding="utf-8"
             )
+            (repository / "sample.py").write_text("VALUE = 1\n", encoding="utf-8")
 
             payload = dashboard_payload(repository, backend_configured=False)
 
@@ -97,6 +98,22 @@ class GuiServerTests(unittest.TestCase):
             with self.subTest(path=path), self.assertRaises(urllib.error.HTTPError) as error:
                 self.fetch(path)
             self.assertEqual(error.exception.code, 404)
+
+    def test_foreign_host_and_cross_site_browser_requests_are_rejected(self) -> None:
+        foreign_host = urllib.request.Request(
+            f"{self.base_url}/api/dashboard", headers={"Host": "example.test"}
+        )
+        with self.assertRaises(urllib.error.HTTPError) as host_error:
+            urllib.request.urlopen(foreign_host, timeout=2)
+        self.assertEqual(host_error.exception.code, 421)
+
+        cross_site = urllib.request.Request(
+            f"{self.base_url}/api/dashboard",
+            headers={"Sec-Fetch-Site": "cross-site"},
+        )
+        with self.assertRaises(urllib.error.HTTPError) as site_error:
+            urllib.request.urlopen(cross_site, timeout=2)
+        self.assertEqual(site_error.exception.code, 403)
 
 
 if __name__ == "__main__":

@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "repo-loop-harness"
 version = "0.1.0"
-description = "Compile repositories into governed capsules and inspect them from a CLI or TUI."
+description = "Compile repositories into governed capsules and inspect them from a CLI, TUI, or local GUI."
 readme = "README.md"
 requires-python = ">=3.12"
 license = "MIT"
@@ -20,6 +20,10 @@ repo-loop = "repo_loop.cli:entrypoint"
 
 [tool.setuptools]
 package-dir = { "" = "src" }
+include-package-data = true
+
+[tool.setuptools.package-data]
+repo_loop = ["web/*.html", "web/*.css", "web/*.js"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

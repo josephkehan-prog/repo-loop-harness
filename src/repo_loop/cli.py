@@ -40,6 +40,20 @@ def build_parser() -> argparse.ArgumentParser:
     tui = commands.add_parser("tui", help="open the repository dashboard")
     tui.add_argument("path", type=Path, nargs="?", default=Path.cwd())
 
+    gui = commands.add_parser("gui", help="open the local repository workbench")
+    gui.add_argument("path", type=Path, nargs="?", default=Path.cwd())
+    gui.add_argument(
+        "--port",
+        type=_port,
+        default=0,
+        help="loopback port (default: choose an available port)",
+    )
+    gui.add_argument(
+        "--no-open",
+        action="store_true",
+        help="serve without opening the default browser",
+    )
+
     run = commands.add_parser("run", help="hand a loop session to the runtime backend")
     run_commands = run.add_subparsers(dest="run_command", required=True)
     understand = run_commands.add_parser(
@@ -80,6 +94,13 @@ def main(
             return _show_capsule(parsed.path, parsed.json)
         if parsed.command == "tui":
             return _run_tui(parsed.path, environment)
+        if parsed.command == "gui":
+            return _run_gui(
+                parsed.path,
+                port=parsed.port,
+                open_browser=not parsed.no_open,
+                environment=environment,
+            )
         if parsed.command == "run":
             discover_repository(parsed.path)
         return forward_to_backend(raw_arguments, environment)
@@ -129,6 +150,31 @@ def _run_tui(path: Path, environment: Mapping[str, str]) -> int:
     )
     app.run()
     return 0
+
+
+def _run_gui(
+    path: Path,
+    *,
+    port: int,
+    open_browser: bool,
+    environment: Mapping[str, str],
+) -> int:
+    from repo_loop.gui import serve_gui
+
+    serve_gui(
+        path,
+        port=port,
+        open_browser=open_browser,
+        backend_configured=bool(environment.get("REPO_LOOP_BACKEND", "").strip()),
+    )
+    return 0
+
+
+def _port(value: str) -> int:
+    port = int(value)
+    if not 0 <= port <= 65535:
+        raise argparse.ArgumentTypeError("port must be between 0 and 65535")
+    return port
 
 
 def _print_json(payload: dict[str, object]) -> None:

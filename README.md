@@ -2,7 +2,7 @@
 
 Turn a repository into a bounded, resumable agent runtime without turning its entire contents into one enormous prompt.
 
-> **Status:** the deterministic repository scanner, capsule compiler, CLI wrapper, and read-only TUI are implemented. Runtime loop commands fail closed unless an external backend is configured. The checkpointed LangGraph executor remains a planned slice.
+> **Status:** the deterministic repository scanner, capsule compiler, CLI wrapper, read-only TUI, and loopback-only browser GUI are implemented. Runtime loop commands fail closed unless an external backend is configured. The checkpointed LangGraph executor remains a planned slice.
 
 ![Repository Loop Agent Harness workflow](docs/workflow.svg)
 
@@ -33,6 +33,7 @@ uv sync
 # Directly from the checkout
 ./repo-loop discover .
 ./repo-loop capsule show .
+./repo-loop gui .
 ./repo-loop tui .
 ```
 
@@ -43,7 +44,45 @@ uv tool install .
 repo-loop --help
 ```
 
-The TUI has four views—Overview, Commands, Evidence, and Policy. Press `r` to rescan the repository and `q` to quit. Discovery is read-only and never creates files in the inspected repository.
+`repo-loop gui .` opens the local inspection bench in the default browser. The TUI has four views—Overview, Commands, Evidence, and Policy. Press `r` to rescan the repository and `q` to quit. Discovery is read-only and never creates files in the inspected repository.
+
+## Browser GUI
+
+The browser GUI answers one question: **is this repository understood well enough, and governed tightly enough, to hand to a loop agent?** It presents the same deterministic facts and capsule policy as the CLI and TUI without adding a second discovery path.
+
+```bash
+# Choose an available loopback port and open the browser
+repo-loop gui /path/to/repository
+
+# Useful for automation or opening the URL yourself
+repo-loop gui /path/to/repository --no-open --port 4317
+```
+
+The inspection bench includes:
+
+- Repository branch, revision, and dirty-state facts.
+- Full and abbreviated capsule digests with a copy action.
+- Discovered languages, package tools, commands, and evidence paths.
+- Trust state, completion checks, permissions, and loop ceilings.
+- A refresh action that performs a fresh read-only scan.
+- Responsive keyboard-accessible layouts and reduced-motion support.
+
+The visual signature is a capsule spine and evidence ledger rather than a generic collection of dashboard cards. Repository identity occupies the dominant surface; provenance and policy remain visibly connected to the digest that produced them.
+
+### Local security boundary
+
+The GUI is deliberately not a remotely hosted control plane:
+
+- It binds only to `127.0.0.1`; there is no public-host option.
+- The repository path is fixed when the server starts and never accepted through an HTTP route.
+- Only `/`, two packaged assets, `/api/health`, and `/api/dashboard` are served.
+- Foreign `Host` headers and cross-site browser requests are rejected.
+- Responses disable caching, framing, referrers, cross-origin access, and unlisted content sources.
+- Assets are loaded from the installed package, not served from the inspected repository.
+- Repository-derived values enter the page through text nodes, never HTML injection.
+- The GUI exposes no mutation endpoint and does not write to the inspected repository.
+
+Press `Ctrl-C` in the serving terminal to stop it.
 
 ## Why this exists
 
@@ -465,7 +504,7 @@ Repeated mention therefore means "reuse available substrate," not "rename this p
 | Hermes | Optional bounded workers and local-model lanes | Global orchestration authority |
 | Local agent manager | Work logs and fleet ownership | Runtime checkpoint database |
 
-## CLI and TUI interface
+## CLI, TUI, and GUI interfaces
 
 The read-only commands are implemented:
 
@@ -478,6 +517,9 @@ repo-loop capsule show /path/to/repository
 
 # Open interactive terminal dashboard
 repo-loop tui /path/to/repository
+
+# Open local browser inspection bench
+repo-loop gui /path/to/repository
 ```
 
 Add `--json` to `discover` or `capsule show` for stable, machine-readable output.
@@ -517,10 +559,16 @@ repo-loop-harness/
 │   ├── backend.py
 │   ├── cli.py
 │   ├── discovery.py
-│   └── tui.py
+│   ├── gui.py
+│   ├── tui.py
+│   └── web/
+│       ├── app.css
+│       ├── app.js
+│       └── index.html
 ├── tests/
 │   ├── test_cli.py
 │   ├── test_discovery.py
+│   ├── test_gui.py
 │   └── test_tui.py
 └── docs/
     ├── testing/
@@ -529,7 +577,7 @@ repo-loop-harness/
     └── workflow.svg
 ```
 
-Current stack: Python 3.12+ and Textual 8. Runtime providers remain replaceable through the `REPO_LOOP_BACKEND` process boundary. LangGraph, Pydantic, and SQLite belong to the later checkpointed-runtime slice, not the read-only compiler.
+Current stack: Python 3.12+, the Python standard-library HTTP server, and Textual 8. The GUI has no web-framework, CDN, or JavaScript-package dependency. Runtime providers remain replaceable through the `REPO_LOOP_BACKEND` process boundary. LangGraph, Pydantic, and SQLite belong to the later checkpointed-runtime slice, not the read-only compiler.
 
 ## Delivery plan
 
@@ -538,6 +586,7 @@ Current stack: Python 3.12+ and Textual 8. Runtime providers remain replaceable 
 - [x] Implement `repo-loop discover <path>`.
 - [x] Implement `repo-loop capsule show <path>`.
 - [x] Add a read-only Textual dashboard.
+- [x] Add a loopback-only browser inspection bench.
 - [x] Produce deterministic snapshot and capsule digests.
 - [x] Use deterministic scanners only.
 - [x] Write nothing to target repository.
@@ -559,7 +608,7 @@ uv run coverage run -m unittest discover -s tests
 uv run coverage report
 ```
 
-The coverage gate is 80 percent. TDD evidence for the executable wrapper is recorded in [`docs/testing/cli-tui-wrapper.tdd.md`](docs/testing/cli-tui-wrapper.tdd.md).
+The coverage gate is 80 percent. TDD evidence is recorded in [`docs/testing/cli-tui-wrapper.tdd.md`](docs/testing/cli-tui-wrapper.tdd.md) and [`docs/testing/gui.tdd.md`](docs/testing/gui.tdd.md).
 
 ### Slice 2: Repository-understanding loop
 
