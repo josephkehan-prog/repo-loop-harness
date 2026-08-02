@@ -1,0 +1,59 @@
+name: Feature request
+description: Propose a focused improvement to RepoLoop.
+title: "feature: "
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Strong proposals name the user problem, evidence, safety boundary, and verification contract before suggesting implementation.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What repository-agent workflow is blocked or unsafe today?
+    validations:
+      required: true
+
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: Describe observable behavior, not only a preferred library or implementation.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Surface
+      options:
+        - repository discovery
+        - capsule contract
+        - CLI
+        - TUI
+        - browser GUI
+        - LangGraph runtime
+        - MCP integration
+        - verification
+        - documentation
+        - other
+    validations:
+      required: true
+
+  - type: textarea
+    id: safety
+    attributes:
+      label: Safety and side effects
+      description: Identify filesystem, command, network, secret, approval, or external-write implications.
+    validations:
+      required: true
+
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification contract
+      description: What independent evidence would prove this feature works?
+    validations:
+      required: true

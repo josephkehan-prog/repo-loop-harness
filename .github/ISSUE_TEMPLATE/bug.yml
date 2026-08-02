@@ -1,0 +1,74 @@
+name: Bug report
+description: Report reproducible incorrect behavior in RepoLoop.
+title: "bug: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting a bug. Do not include secrets, private repository content, or security vulnerabilities. Report vulnerabilities through GitHub Security Advisories.
+
+  - type: input
+    id: version
+    attributes:
+      label: RepoLoop version or commit
+      placeholder: "repo-loop 0.1.0 or commit SHA"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: interface
+    attributes:
+      label: Interface
+      options:
+        - discover CLI
+        - capsule CLI
+        - TUI
+        - browser GUI
+        - runtime adapter
+        - packaging or installation
+        - documentation
+        - other
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Provide commands and a sanitized minimal repository shape.
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: "OS, Python version, uv version"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety check
+      options:
+        - label: I removed secrets, credentials, personal data, and private repository content.
+          required: true
+        - label: This is not a security vulnerability.
+          required: true

@@ -245,7 +245,7 @@ uv export --locked --no-dev --no-emit-project --no-hashes | uvx pip-audit -r /de
 
 The test suite enforces an 80% branch-coverage floor. Current TDD evidence is recorded in [CLI/TUI tests](docs/testing/cli-tui-wrapper.tdd.md) and [GUI tests](docs/testing/gui.tdd.md).
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
+See [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. Participation is governed by the [RepoLoop Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Roadmap
 
