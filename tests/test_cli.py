@@ -32,7 +32,15 @@ class CliTests(unittest.TestCase):
 
         self.assertEqual(code, 0)
         self.assertEqual(stderr, "")
-        for command in ("discover", "capsule", "tui", "run", "resume", "status"):
+        for command in (
+            "discover",
+            "capsule",
+            "tui",
+            "gui",
+            "run",
+            "resume",
+            "status",
+        ):
             self.assertIn(command, stdout)
 
     def test_discover_prints_machine_readable_snapshot(self) -> None:
