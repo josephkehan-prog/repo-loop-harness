@@ -13,6 +13,7 @@ from repo_loop import __version__
 from repo_loop.backend import BackendUnavailable, forward_to_backend
 from repo_loop.discovery import compile_capsule, discover_repository
 from repo_loop.presentation import terminal_text
+from repo_loop.proof import verify_repository_contract
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -36,6 +37,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     capsule_show.add_argument("path", type=Path)
     capsule_show.add_argument("--json", action="store_true", help="emit JSON")
+
+    proof = commands.add_parser(
+        "proof", help="verify deterministic and fail-closed guarantees"
+    )
+    proof.add_argument("path", type=Path, nargs="?", default=Path.cwd())
+    proof.add_argument("--json", action="store_true", help="emit JSON")
 
     tui = commands.add_parser("tui", help="open the repository dashboard")
     tui.add_argument("path", type=Path, nargs="?", default=Path.cwd())
@@ -92,6 +99,8 @@ def main(
             return _show_snapshot(parsed.path, parsed.json)
         if parsed.command == "capsule":
             return _show_capsule(parsed.path, parsed.json)
+        if parsed.command == "proof":
+            return _show_proof(parsed.path, parsed.json)
         if parsed.command == "tui":
             return _run_tui(parsed.path, environment)
         if parsed.command == "gui":
@@ -140,6 +149,24 @@ def _show_capsule(path: Path, as_json: bool) -> int:
     )
     print(f"External writes: {capsule['permissions']['external_write']}")
     return 0
+
+
+def _show_proof(path: Path, as_json: bool) -> int:
+    report = verify_repository_contract(path)
+    if as_json:
+        _print_json(report)
+        return 0 if report["result"] == "pass" else 1
+
+    print(f"Proof: {str(report['result']).upper()}")
+    print(f"Repository: {terminal_text(report['repository']['name'])}")
+    print(f"Digest: {report['snapshot_digest']}")
+    for check in report["checks"]:
+        label = str(check["name"]).replace("_", " ").capitalize()
+        marker = "PASS" if check["passed"] else "FAIL"
+        print(f"[{marker}] {label}")
+    summary = report["summary"]
+    print(f"Checks: {summary['passed']} passed, {summary['failed']} failed")
+    return 0 if report["result"] == "pass" else 1
 
 
 def _run_tui(path: Path, environment: Mapping[str, str]) -> int:

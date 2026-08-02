@@ -3,14 +3,14 @@
 Status: architecture proposal v0.1
 Date: 2026-08-01
 
-RepoLoop is an independent repository-agent implementation inspired by the specification-first workflow architecture of [Q00/Ouroboros](https://github.com/Q00/ouroboros). See [ACKNOWLEDGEMENTS.md](ACKNOWLEDGEMENTS.md) for attribution and project boundaries.
+RepoLoop is an independent repository-agent implementation. Prior-art attribution and project boundaries are centralized in [ACKNOWLEDGEMENTS.md](ACKNOWLEDGEMENTS.md).
 
 ## Decision
 
 Build a thin repository-agent layer on top of existing machinery:
 
-- Agent Hub remains capability and MCP source of truth.
-- Ouroboros supplies specification, ledger, evaluation, and runtime adapters.
+- Agent Hub can remain an optional capability and MCP source of truth.
+- RepoLoop owns its repository contracts, evidence ledger, evaluation boundary, and runtime adapter protocol.
 - Repository scanning follows the evidence discipline proven by `understand-local-agent`.
 - Loop supervision adopts Ralph-style iteration, wall-time, cost, and stall limits.
 - LangGraph owns state transitions, checkpointing, interrupts, and resumability.
@@ -353,12 +353,12 @@ Recommended packaging: Python 3.12+, LangGraph, Pydantic, SQLite first. Keep run
 | Existing system | Reuse | Do not duplicate |
 |---|---|---|
 | Agent Hub | Tool discovery, trust, caller identity, policy, secret redaction | MCP registry or harness-specific copies |
-| Ouroboros | Seed, ledger, runtime adapters, evaluation, resumable loop semantics | Second specification engine |
+| Prior-art workflow engines | Specification, ledger, evaluation, adapter, and resume patterns | Runtime coupling or copied source |
 | Ralph-to-Ralph | Budget caps, max cycles, restart supervision, build-proof gate, stall detection | SaaS cloning assumptions |
 | Hermes | Optional bounded worker execution and local-model lanes | Global orchestration authority |
 | Local agent manager | Work logs, fleet inventory, agent ownership | Runtime state database |
 
-Best implementation shape: one Ouroboros domain plugin named `repo-loop`, plus a small reusable `repo-capsule` library. Extract a standalone harness only after two different loop templates need the same independent runtime.
+Best implementation shape: a small reusable `repo-capsule` library plus explicit adapters for compatible agent runtimes. Keep the contracts standalone so no single orchestration framework becomes mandatory.
 
 ## MVP
 

@@ -1,11 +1,11 @@
-digraph RepoLoopHarness {
+digraph RepoLoopWorkflow {
   graph [
-    rankdir=TB,
+    rankdir=LR,
     bgcolor="#FFFFFF",
     pad="0.35",
-    nodesep="0.38",
-    ranksep="0.55",
-    splines=spline,
+    nodesep="0.42",
+    ranksep="0.70",
+    splines=ortho,
     newrank=true,
     fontname="Helvetica"
   ];
@@ -18,7 +18,7 @@ digraph RepoLoopHarness {
     fontcolor="#0F172A",
     fontname="Helvetica",
     fontsize=11,
-    margin="0.16,0.10"
+    margin="0.18,0.12"
   ];
 
   edge [
@@ -29,78 +29,50 @@ digraph RepoLoopHarness {
     arrowsize=0.75
   ];
 
-  subgraph cluster_inputs {
-    label="Inputs";
-    color="#CBD5E1";
+  repo [label="Local Git\nrepository", shape=folder, fillcolor="#E2E8F0"];
+
+  subgraph cluster_current {
+    label="Available now";
+    color="#2563EB";
+    penwidth=1.5;
     style="rounded";
-    repo [label="Repository"];
-    goal [label="Explicit goal"];
-    policy [label="Machine policy"];
-    { rank=same; repo; goal; policy; }
+
+    scan [label="Deterministic\nread-only scan", fillcolor="#DBEAFE"];
+    snapshot [label="RepoSnapshot\nfacts + evidence", shape=note, fillcolor="#EFF6FF"];
+    capsule [label="RepoCapsule\npolicy + limits", shape=note, fillcolor="#EFF6FF"];
+    proof [label="Proof report\n5 contract checks", fillcolor="#DCFCE7"];
+    interfaces [label="CLI  |  TUI  |  GUI  |  JSON", fillcolor="#F1F5F9"];
+
+    scan -> snapshot;
+    snapshot -> capsule;
+    capsule -> proof;
+    capsule -> interfaces;
   }
 
-  subgraph cluster_compile {
-    label="Compile repository";
-    color="#93C5FD";
+  subgraph cluster_consumers {
+    label="Use the contract";
+    color="#A78BFA";
     style="rounded";
-    trust [label="Trust and\nquarantine gate", fillcolor="#FEF3C7"];
-    scan [label="Deterministic\nscanner"];
-    capsule [label="RepoCapsule", shape=folder, fillcolor="#DBEAFE"];
-    { rank=same; trust; scan; capsule; }
-    trust -> scan;
-    scan -> capsule;
+
+    agents [label="Codex  |  Claude Code\nOpenCode  |  custom runtime", fillcolor="#F3E8FF"];
   }
 
-  subgraph cluster_runtime {
-    label="Checkpointed loop";
-    color="#86EFAC";
-    style="rounded";
-    controller [label="LangGraph\ncontroller", fillcolor="#DCFCE7"];
-    select [label="Select one\nwork item"];
-    skill [label="Load one\nskill"];
-    plan [label="Bounded plan"];
-    execute [label="Execute in\nisolated worktree"];
-    verify [label="Independent\nverification", fillcolor="#E0F2FE"];
-    decide [label="Goal complete?", shape=diamond, fillcolor="#F1F5F9"];
-    reflect [label="Classify failure\nand change strategy", fillcolor="#FCE7F3"];
+  subgraph cluster_planned {
+    label="Planned governed runtime";
+    color="#94A3B8";
+    style="rounded,dashed";
 
-    controller -> select;
-    select -> skill;
-    skill -> plan;
-    plan -> execute;
-    execute -> verify;
-    verify -> decide [label="pass"];
-    verify -> reflect [label="recoverable", constraint=false];
-    reflect -> select [label="bounded retry", constraint=false];
-    decide -> select [label="no", constraint=false];
-    { rank=same; select; skill; plan; }
-    { rank=same; execute; verify; decide; }
+    controller [label="Checkpointed\ncontroller", style="rounded,filled,dashed", fillcolor="#F8FAFC"];
+    worktree [label="Isolated\nworktree", style="rounded,filled,dashed", fillcolor="#F8FAFC"];
+    verify [label="Independent\nchange verifier", style="rounded,filled,dashed", fillcolor="#F8FAFC"];
+    result [label="Verified result\nor resumable stop", shape=doublecircle, style="filled,dashed", fillcolor="#F8FAFC"];
+
+    controller -> worktree [style=dashed];
+    worktree -> verify [style=dashed];
+    verify -> result [style=dashed];
   }
 
-  subgraph cluster_controls {
-    label="Controls";
-    color="#D8B4FE";
-    style="rounded";
-    hub [label="Agent Hub\ncapabilities", fillcolor="#F3E8FF"];
-    checkpoints [label="Checkpoint and\nevent ledger", shape=cylinder, fillcolor="#F3E8FF"];
-    watchdog [label="Budget and\nstall watchdog", fillcolor="#FEE2E2"];
-    human [label="Human approval", shape=hexagon, fillcolor="#FEF3C7"];
-    { rank=same; hub; checkpoints; watchdog; human; }
-  }
-
-  complete [label="Verified result", shape=doublecircle, fillcolor="#DCFCE7"];
-  stopped [label="Stopped and\nresumable", shape=octagon, fillcolor="#FEE2E2"];
-  { rank=same; complete; stopped; }
-
-  repo -> trust;
-  goal -> controller;
-  policy -> trust;
-  capsule -> controller;
-  hub -> skill [style=dashed, label="allowlisted", constraint=false];
-  controller -> checkpoints [dir=both, style=dashed, constraint=false];
-  watchdog -> controller [style=dashed, constraint=false];
-  verify -> human [label="approval needed"];
-  human -> execute [label="approved", constraint=false];
-  decide -> complete [label="yes"];
-  controller -> stopped [label="budget, stall,\nconflict, or drift"];
+  repo -> scan;
+  interfaces -> agents;
+  capsule -> controller [style=dashed, xlabel="future adapter"];
 }
