@@ -7,7 +7,6 @@ import tempfile
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
@@ -66,7 +65,9 @@ class DiscoveryTests(unittest.TestCase):
         self.assertEqual(first["commands"]["test"], "npm test")
         self.assertEqual(first["commands"]["lint"], "npm run lint")
         self.assertEqual(len(first["fact_digest"]), 64)
-        self.assertTrue(all(not Path(item["path"]).is_absolute() for item in first["evidence"]))
+        self.assertTrue(
+            all(not Path(item["path"]).is_absolute() for item in first["evidence"])
+        )
 
     def test_marks_dirty_paths_without_modifying_repository(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -92,8 +93,11 @@ class DiscoveryTests(unittest.TestCase):
         self.assertEqual(capsule["schema_version"], 1)
         self.assertEqual(capsule["trust"], "quarantined")
         self.assertEqual(capsule["snapshot_digest"], snapshot["fact_digest"])
-        self.assertTrue(capsule["repo_id"].startswith(f"{snapshot['repository']['name']}-"))
-        self.assertEqual(capsule["verification"]["completion_requires"], ["lint", "test"])
+        self.assertRegex(capsule["repo_id"], r"^[a-z0-9-]+-[a-f0-9]{12}$")
+        self.assertTrue(capsule["repo_id"].endswith(snapshot["fact_digest"][:12]))
+        self.assertEqual(
+            capsule["verification"]["completion_requires"], ["lint", "test"]
+        )
         self.assertEqual(capsule["permissions"]["external_write"], "approval")
 
     def test_rejects_missing_or_non_directory_paths(self) -> None:

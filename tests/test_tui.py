@@ -6,7 +6,6 @@ import tempfile
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
@@ -95,8 +94,8 @@ class RepoLoopAppTests(unittest.IsolatedAsyncioTestCase):
             async with app.run_test(size=(120, 40)) as pilot:
                 title = app.query_one("#repo-name", Static)
                 runtime = app.query_one("#runtime-state", Static)
-                self.assertIn(repository.name, str(title.renderable))
-                self.assertIn("backend not configured", str(runtime.renderable))
+                self.assertIn(repository.name, str(title.content))
+                self.assertIn("backend not configured", str(runtime.content))
 
                 before = app.refresh_count
                 await pilot.press("r")

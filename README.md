@@ -2,7 +2,7 @@
 
 Turn a repository into a bounded, resumable agent runtime without turning its entire contents into one enormous prompt.
 
-> **Status:** design-stage project. Architecture and workflow contracts exist. Executable harness does not exist yet. Commands shown under "Target interface" describe intended behavior and are not currently runnable.
+> **Status:** the deterministic repository scanner, capsule compiler, CLI wrapper, and read-only TUI are implemented. Runtime loop commands fail closed unless an external backend is configured. The checkpointed LangGraph executor remains a planned slice.
 
 ![Repository Loop Agent Harness workflow](docs/workflow.svg)
 
@@ -20,6 +20,30 @@ repository + explicit goal + policy
 ```
 
 The repository does not become an unconstrained autonomous personality. It becomes a governed execution environment with a narrow set of discoverable capabilities.
+
+## Quick start
+
+Requirements: Python 3.12+ and [`uv`](https://docs.astral.sh/uv/).
+
+```bash
+git clone https://github.com/josephkehan-prog/repo-loop-harness.git
+cd repo-loop-harness
+uv sync
+
+# Directly from the checkout
+./repo-loop discover .
+./repo-loop capsule show .
+./repo-loop tui .
+```
+
+Install the `repo-loop` command in an isolated tool environment:
+
+```bash
+uv tool install .
+repo-loop --help
+```
+
+The TUI has four views—Overview, Commands, Evidence, and Policy. Press `r` to rescan the repository and `q` to quit. Discovery is read-only and never creates files in the inspected repository.
 
 ## Why this exists
 
@@ -441,9 +465,9 @@ Repeated mention therefore means "reuse available substrate," not "rename this p
 | Hermes | Optional bounded workers and local-model lanes | Global orchestration authority |
 | Local agent manager | Work logs and fleet ownership | Runtime checkpoint database |
 
-## Target interface
+## CLI and TUI interface
 
-These commands define intended product shape. They are not implemented yet.
+The read-only commands are implemented:
 
 ```bash
 # Read-only compilation
@@ -451,6 +475,18 @@ repo-loop discover /path/to/repository
 
 # Inspect generated capsule
 repo-loop capsule show /path/to/repository
+
+# Open interactive terminal dashboard
+repo-loop tui /path/to/repository
+```
+
+Add `--json` to `discover` or `capsule show` for stable, machine-readable output.
+
+Runtime commands use an explicit adapter boundary:
+
+```bash
+# Configure a separately installed runtime adapter
+export REPO_LOOP_BACKEND="/path/to/repo-loop-runtime-adapter"
 
 # Run evidence-backed understanding loop
 repo-loop run understand /path/to/repository --mode discover
@@ -465,52 +501,65 @@ repo-loop resume SESSION_ID
 repo-loop status SESSION_ID
 ```
 
-## Proposed repository layout
+The wrapper forwards arguments as an array without shell interpolation. With no backend configured, runtime commands exit with `EX_UNAVAILABLE`; they never simulate a successful loop.
+
+## Repository layout
 
 ```text
 repo-loop-harness/
 ├── README.md
+├── ARCHITECTURE.md
+├── repo-loop
 ├── pyproject.toml
 ├── src/repo_loop/
+│   ├── __init__.py
+│   ├── __main__.py
+│   ├── backend.py
 │   ├── cli.py
-│   ├── contracts.py
-│   ├── scanner/
-│   ├── compiler/
-│   ├── skills/
-│   ├── graph/
-│   ├── runtime/
-│   ├── verifier/
-│   ├── policy/
-│   ├── storage/
-│   └── observability/
-├── templates/
-│   ├── repo-agent.yaml
-│   └── loop-policies/
+│   ├── discovery.py
+│   └── tui.py
 ├── tests/
-│   ├── unit/
-│   ├── integration/
-│   └── e2e/
+│   ├── test_cli.py
+│   ├── test_discovery.py
+│   └── test_tui.py
 └── docs/
+    ├── testing/
     ├── workflow.dot
+    ├── workflow.png
     └── workflow.svg
 ```
 
-Recommended stack: Python 3.12+, LangGraph, Pydantic, SQLite. Runtime providers remain replaceable through protocols.
+Current stack: Python 3.12+ and Textual 8. Runtime providers remain replaceable through the `REPO_LOOP_BACKEND` process boundary. LangGraph, Pydantic, and SQLite belong to the later checkpointed-runtime slice, not the read-only compiler.
 
 ## Delivery plan
 
 ### Slice 1: Read-only capsule compiler
 
-- Implement `repo-loop discover <path>`.
-- Produce snapshot, capsule, and confidence report.
-- Use deterministic scanners only.
-- Write nothing to target repository.
+- [x] Implement `repo-loop discover <path>`.
+- [x] Implement `repo-loop capsule show <path>`.
+- [x] Add a read-only Textual dashboard.
+- [x] Produce deterministic snapshot and capsule digests.
+- [x] Use deterministic scanners only.
+- [x] Write nothing to target repository.
+- [ ] Expand scanners for repository instructions, ownership, and deployment surfaces.
 
 Acceptance:
 
 - Same repository revision produces same fact digests.
 - Every fact has evidence path.
 - Untrusted instructions cannot change policy.
+
+## Development
+
+```bash
+uv sync --extra dev
+uv run python -m unittest discover -s tests -v
+uv run ruff check .
+uv run coverage run -m unittest discover -s tests
+uv run coverage report
+```
+
+The coverage gate is 80 percent. TDD evidence for the executable wrapper is recorded in [`docs/testing/cli-tui-wrapper.tdd.md`](docs/testing/cli-tui-wrapper.tdd.md).
 
 ### Slice 2: Repository-understanding loop
 

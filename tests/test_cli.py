@@ -11,12 +11,12 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from repo_loop.backend import BackendUnavailable, forward_to_backend
 from repo_loop.cli import main
+from repo_loop.presentation import terminal_text
 
 
 class CliTests(unittest.TestCase):
@@ -32,7 +32,7 @@ class CliTests(unittest.TestCase):
 
         self.assertEqual(code, 0)
         self.assertEqual(stderr, "")
-        for command in ("discover", "capsule", "run", "resume", "status"):
+        for command in ("discover", "capsule", "tui", "run", "resume", "status"):
             self.assertIn(command, stdout)
 
     def test_discover_prints_machine_readable_snapshot(self) -> None:
@@ -106,6 +106,14 @@ class WrapperEndToEndTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout.strip(), "repo-loop 0.1.0")
+
+
+class TerminalPresentationTests(unittest.TestCase):
+    def test_control_characters_are_escaped_before_terminal_rendering(self) -> None:
+        self.assertEqual(
+            terminal_text("repo\x1b[31m\nname\t"),
+            "repo\\x1b[31m\\x0aname\\x09",
+        )
 
 
 if __name__ == "__main__":

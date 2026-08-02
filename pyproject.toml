@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "repo-loop-harness"
+version = "0.1.0"
+description = "Compile repositories into governed capsules and inspect them from a CLI or TUI."
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+authors = [{ name = "Joseph Ke Han" }]
+dependencies = ["textual>=8.2,<9"]
+
+[project.optional-dependencies]
+dev = ["coverage>=7.6,<8", "ruff>=0.11,<1"]
+
+[project.scripts]
+repo-loop = "repo_loop.cli:entrypoint"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.coverage.run]
+branch = true
+source = ["repo_loop"]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true
