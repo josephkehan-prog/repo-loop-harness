@@ -100,6 +100,31 @@ class DiscoveryTests(unittest.TestCase):
         )
         self.assertEqual(capsule["permissions"]["external_write"], "approval")
 
+    def test_discovers_makefile_commands_without_overriding_package_scripts(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            self.make_repository(repository)
+            (repository / "Makefile").write_text(
+                ".PHONY: build security typecheck test\n"
+                "build:\n\t@true\n"
+                "security:\n\t@true\n"
+                "typecheck:\n\t@true\n"
+                "test:\n\t@false\n",
+                encoding="utf-8",
+            )
+
+            snapshot = discover_repository(repository)
+
+        self.assertEqual(snapshot["commands"]["build"], "make build")
+        self.assertEqual(snapshot["commands"]["security"], "make security")
+        self.assertEqual(snapshot["commands"]["typecheck"], "make typecheck")
+        self.assertEqual(snapshot["commands"]["test"], "npm test")
+        self.assertIn(
+            {"fact": "command:build", "path": "Makefile"}, snapshot["evidence"]
+        )
+
     def test_rejects_missing_or_non_directory_paths(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

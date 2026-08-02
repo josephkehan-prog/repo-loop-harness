@@ -36,6 +36,7 @@ class CliTests(unittest.TestCase):
         for command in (
             "discover",
             "capsule",
+            "proof",
             "tui",
             "gui",
             "run",
@@ -63,6 +64,28 @@ class CliTests(unittest.TestCase):
         payload = json.loads(stdout)
         self.assertEqual(payload["trust"], "quarantined")
         self.assertIn("snapshot_digest", payload)
+
+    def test_proof_prints_machine_readable_verification_report(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            code, stdout, stderr = self.invoke(["proof", directory, "--json"])
+
+        self.assertEqual(code, 0)
+        self.assertEqual(stderr, "")
+        payload = json.loads(stdout)
+        self.assertEqual(payload["result"], "pass")
+        self.assertTrue(payload["checks"])
+        self.assertTrue(all(check["passed"] for check in payload["checks"]))
+        self.assertEqual(payload["summary"]["failed"], 0)
+
+    def test_proof_prints_scannable_human_report(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            code, stdout, stderr = self.invoke(["proof", directory])
+
+        self.assertEqual(code, 0)
+        self.assertEqual(stderr, "")
+        self.assertIn("Proof: PASS", stdout)
+        self.assertIn("Snapshot repeatable", stdout)
+        self.assertIn("Checks:", stdout)
 
     def test_invalid_repository_path_is_a_usage_error(self) -> None:
         code, stdout, stderr = self.invoke(["discover", "/definitely/missing/repo"])

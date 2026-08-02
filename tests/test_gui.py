@@ -96,7 +96,10 @@ class GuiServerTests(unittest.TestCase):
 
     def test_unknown_and_traversal_routes_are_not_served(self) -> None:
         for path in ("/missing", "/../pyproject.toml", "/%2e%2e/pyproject.toml"):
-            with self.subTest(path=path), self.assertRaises(urllib.error.HTTPError) as error:
+            with (
+                self.subTest(path=path),
+                self.assertRaises(urllib.error.HTTPError) as error,
+            ):
                 self.fetch(path)
             self.assertEqual(error.exception.code, 404)
 

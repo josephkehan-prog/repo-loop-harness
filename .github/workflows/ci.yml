@@ -42,6 +42,11 @@ jobs:
           uv run coverage run -m unittest discover -s tests
           uv run coverage report -m
 
+      - name: Run reproducible proof
+        run: |
+          uv run repo-loop proof . --json > /tmp/repo-loop-proof.json
+          uv run python -c 'import json; report=json.load(open("/tmp/repo-loop-proof.json")); assert report["result"] == "pass"'
+
       - name: Build package
         run: uv build
 

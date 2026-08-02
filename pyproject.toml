@@ -5,19 +5,22 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "repo-loop-harness"
 version = "0.1.0"
-description = "Local-first repository agent harness for governed AI coding loops."
+description = "Local-first repository context and guardrails for AI coding agents."
 readme = "README.md"
 requires-python = ">=3.12"
 license = "MIT"
 authors = [{ name = "Joseph Ke Han" }]
 keywords = [
     "ai-agents",
+    "ai-code-verification",
     "agent-harness",
+    "coding-agent-guardrails",
     "coding-agents",
     "langgraph",
     "mcp",
     "repository-analysis",
     "repository-automation",
+    "repository-context",
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
