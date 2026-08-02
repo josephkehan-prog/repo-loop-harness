@@ -1,7 +1,9 @@
-# Repository Loop Agent Harness
+# RepoLoop architecture
 
 Status: architecture proposal v0.1
 Date: 2026-08-01
+
+RepoLoop is an independent repository-agent implementation inspired by the specification-first workflow architecture of [Q00/Ouroboros](https://github.com/Q00/ouroboros). See [ACKNOWLEDGEMENTS.md](ACKNOWLEDGEMENTS.md) for attribution and project boundaries.
 
 ## Decision
 

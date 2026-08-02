@@ -18,7 +18,7 @@ from repo_loop.presentation import terminal_text
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="repo-loop",
-        description="Compile repositories into governed loop-agent capsules.",
+        description="RepoLoop compiles repositories into governed agent capsules.",
     )
     parser.add_argument(
         "--version", action="version", version=f"repo-loop {__version__}"

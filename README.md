@@ -1,25 +1,43 @@
-# Repository Loop Agent Harness
+# RepoLoop
 
-Turn a repository into a bounded, resumable agent runtime without turning its entire contents into one enormous prompt.
+**A local-first repository agent harness for compiling Git repositories into governed, evidence-backed agent capsules.**
 
-> **Status:** the deterministic repository scanner, capsule compiler, CLI wrapper, read-only TUI, and loopback-only browser GUI are implemented. Runtime loop commands fail closed unless an external backend is configured. The checkpointed LangGraph executor remains a planned slice.
+[![CI](https://github.com/josephkehan-prog/repo-loop-harness/actions/workflows/ci.yml/badge.svg)](https://github.com/josephkehan-prog/repo-loop-harness/actions/workflows/ci.yml)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-3776AB.svg)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-65c7d0.svg)](LICENSE)
 
-![Repository Loop Agent Harness workflow](docs/workflow.svg)
+RepoLoop turns a software repository into a deterministic `RepoSnapshot` and a fail-closed `RepoCapsule`: verified facts, discovered commands, evidence paths, trust state, permissions, loop limits, and completion criteria. The capsule is the contract a bounded AI coding agent can use without loading an entire repository into one enormous prompt.
 
-## What this project is
+> RepoLoop is an independent implementation inspired by [Q00/Ouroboros](https://github.com/Q00/ouroboros), the original specification-first workflow engine for AI coding agents. See [Acknowledgements](ACKNOWLEDGEMENTS.md) for attribution and project boundaries.
 
-Repository Loop Agent Harness compiles a software repository into a `RepoCapsule`: a versioned description of its facts, commands, skills, agents, permissions, and success criteria. A checkpointed controller can then run bounded improvement loops against that capsule inside an isolated worktree.
+![RepoLoop repository agent workflow](docs/workflow.svg)
 
-Core promise:
+## Why RepoLoop?
 
-```text
-repository + explicit goal + policy
-    -> RepoCapsule
-    -> bounded loop session
-    -> independently verified outcome
-```
+Most repository agents fail in familiar ways: they lose constraints in oversized context, trust worker self-reports, retry without changing strategy, collide with dirty work, or allow repository text to expand machine policy.
 
-The repository does not become an unconstrained autonomous personality. It becomes a governed execution environment with a narrow set of discoverable capabilities.
+RepoLoop makes the missing boundaries explicit:
+
+- **Deterministic discovery** — facts come from scanners, not model guesses.
+- **Evidence provenance** — stack and command facts point back to repository files.
+- **Fail-closed policy** — new repositories begin quarantined; destructive actions are denied.
+- **Bounded loops** — iteration, attempt, budget, and stall limits are part of the capsule.
+- **Independent verification** — a worker cannot approve its own result.
+- **Local-first operation** — current interfaces perform read-only discovery with no target-repository writes.
+- **Replaceable runtime** — future LangGraph, MCP, or other agent backends sit behind an explicit adapter boundary.
+
+## Current status
+
+RepoLoop `0.1.0` implements the read-only foundation:
+
+- deterministic repository scanner;
+- governed capsule compiler;
+- machine-readable CLI;
+- interactive Textual TUI;
+- responsive loopback-only browser GUI;
+- explicit external runtime adapter that fails closed when unconfigured.
+
+The checkpointed LangGraph executor, isolated worktree mutation modes, and MCP capability routing are planned—not silently simulated by the current release.
 
 ## Quick start
 
@@ -30,152 +48,133 @@ git clone https://github.com/josephkehan-prog/repo-loop-harness.git
 cd repo-loop-harness
 uv sync
 
-# Directly from the checkout
 ./repo-loop discover .
 ./repo-loop capsule show .
 ./repo-loop gui .
-./repo-loop tui .
 ```
 
-Install the `repo-loop` command in an isolated tool environment:
+Install the command in an isolated tool environment:
 
 ```bash
 uv tool install .
 repo-loop --help
 ```
 
-`repo-loop gui .` opens the local inspection bench in the default browser. The TUI has four views—Overview, Commands, Evidence, and Policy. Press `r` to rescan the repository and `q` to quit. Discovery is read-only and never creates files in the inspected repository.
+## Interfaces
 
-## Browser GUI
-
-The browser GUI answers one question: **is this repository understood well enough, and governed tightly enough, to hand to a loop agent?** It presents the same deterministic facts and capsule policy as the CLI and TUI without adding a second discovery path.
+### Browser GUI
 
 ```bash
-# Choose an available loopback port and open the browser
+# Choose an available local port and open the browser
 repo-loop gui /path/to/repository
 
-# Useful for automation or opening the URL yourself
+# Serve without opening a browser
 repo-loop gui /path/to/repository --no-open --port 4317
 ```
 
-The inspection bench includes:
+The inspection bench shows repository identity, Git state, capsule digest, detected stack, commands, evidence, permissions, completion checks, and loop ceilings. Use **Refresh repository** to rescan and **Copy digest** to copy the current capsule identity.
 
-- Repository branch, revision, and dirty-state facts.
-- Full and abbreviated capsule digests with a copy action.
-- Discovered languages, package tools, commands, and evidence paths.
-- Trust state, completion checks, permissions, and loop ceilings.
-- A refresh action that performs a fresh read-only scan.
-- Responsive keyboard-accessible layouts and reduced-motion support.
+The GUI binds only to `127.0.0.1`. It has no public-host option, no telemetry, no external assets, no mutation endpoint, and no way to select a different filesystem path through HTTP.
 
-The visual signature is a capsule spine and evidence ledger rather than a generic collection of dashboard cards. Repository identity occupies the dominant surface; provenance and policy remain visibly connected to the digest that produced them.
+### Terminal UI
 
-### Local security boundary
+```bash
+repo-loop tui /path/to/repository
+```
 
-The GUI is deliberately not a remotely hosted control plane:
+The TUI provides Overview, Commands, Evidence, and Policy views. Press `r` to rescan and `q` to quit.
 
-- It binds only to `127.0.0.1`; there is no public-host option.
-- The repository path is fixed when the server starts and never accepted through an HTTP route.
-- Only `/`, two packaged assets, `/api/health`, and `/api/dashboard` are served.
-- Foreign `Host` headers and cross-site browser requests are rejected.
-- Responses disable caching, framing, referrers, cross-origin access, and unlisted content sources.
-- Assets are loaded from the installed package, not served from the inspected repository.
-- Repository-derived values enter the page through text nodes, never HTML injection.
-- The GUI exposes no mutation endpoint and does not write to the inspected repository.
+### CLI and JSON
 
-Press `Ctrl-C` in the serving terminal to stop it.
+```bash
+# Human-readable repository facts
+repo-loop discover /path/to/repository
 
-## Why this exists
+# Stable machine-readable snapshot
+repo-loop discover /path/to/repository --json
 
-Most repository agents fail in predictable ways:
+# Compile and inspect the governed capsule
+repo-loop capsule show /path/to/repository --json
+```
 
-- They load too much context and lose important constraints.
-- They accept worker self-reports as proof of completion.
-- They retry identical approaches without measuring progress.
-- They mutate a shared working tree and collide with user work.
-- They treat repository instructions as trusted system policy.
-- They run until token, time, or money limits fail externally.
-- They blur tools, skills, agents, commands, and workflows into one prompt.
+Example snapshot shape:
 
-This harness makes those boundaries explicit.
+```json
+{
+  "schema_version": 1,
+  "repository": {
+    "name": "example",
+    "branch": "main",
+    "dirty": false
+  },
+  "stack": {
+    "languages": ["python"],
+    "package_managers": ["uv"]
+  },
+  "commands": {
+    "test": "python -m pytest"
+  },
+  "evidence": [
+    {"fact": "language:python", "path": "src/example/__init__.py"}
+  ],
+  "fact_digest": "…"
+}
+```
 
-| Failure | Harness response |
-|---|---|
-| Context overload | Pull only selected skills and bounded repository facts |
-| False completion | Independent verifier owns verdict |
-| Infinite retry | Attempt caps, failure classes, and stall detection |
-| Workspace collision | One isolated worktree per mutable session |
-| Prompt injection | Trust gate separates repository data from machine policy |
-| Scope drift | Goal, capsule, and diff digests checked every cycle |
-| Unsafe side effect | Human approval interrupt before external action |
+### Runtime adapter
 
-## Workflow
+Runtime commands are intentionally unavailable until a separate backend is configured:
 
-1. **Trust** repository. New or external repositories begin quarantined.
-2. **Scan** deterministic facts: stack, commands, entry points, tests, instructions, and dirty state.
-3. **Compile** facts into immutable `RepoSnapshot`, then governed `RepoCapsule`.
-4. **Instantiate** loop from capsule, explicit goal, budget, permissions, and isolated workspace.
-5. **Select** one work item and one required skill.
-6. **Execute** through bounded agent or deterministic node.
-7. **Verify** using commands and evidence outside worker context.
-8. **Reflect** on measured results, not prose confidence.
-9. **Continue, retry differently, request approval, complete, or stop.**
-10. **Persist** every transition for resume and audit.
+```bash
+export REPO_LOOP_BACKEND="/path/to/repo-loop-runtime-adapter"
 
-Editable chart source: [`docs/workflow.dot`](docs/workflow.dot). Alternate render: [`docs/workflow.png`](docs/workflow.png).
+repo-loop run understand /path/to/repository --mode discover
+repo-loop run repair /path/to/repository --issue 123 --mode shadow
+repo-loop resume SESSION_ID
+repo-loop status SESSION_ID
+```
 
-## Core concepts
+Arguments are forwarded as an array without shell interpolation. Without `REPO_LOOP_BACKEND`, runtime commands return `EX_UNAVAILABLE`; RepoLoop never pretends a loop ran successfully.
 
-### Repository snapshot
+## How it works
 
-`RepoSnapshot` records what can be proven about one repository revision.
+```text
+repository + explicit goal + policy
+    -> deterministic RepoSnapshot
+    -> governed RepoCapsule
+    -> bounded loop session
+    -> independent verification
+    -> verified result or resumable stop
+```
 
-Examples:
+### RepoSnapshot
 
-- Git root, HEAD, branch, remotes, and dirty paths.
-- Languages, package managers, lockfiles, and runtime versions.
-- Real build, test, lint, typecheck, and security commands.
-- Entry points, generated files, ownership boundaries, and deployment surfaces.
-- Repository-local instruction files with provenance.
-- Available skills and agents without loading their full bodies.
+A snapshot records only facts RepoLoop can prove about one repository state:
 
-Snapshot facts require evidence paths. Model-written guesses are excluded.
+- Git root, HEAD, branch, and dirty paths;
+- languages, package managers, and lockfiles;
+- discovered build, test, lint, format, security, and typecheck commands;
+- repository-relative evidence for each derived fact;
+- a canonical SHA-256 digest over the portable facts.
 
-### Repository capsule
+The scanner ignores dependency caches, build output, VCS internals, and symlinks. It does not write into the inspected repository.
 
-`RepoCapsule` converts snapshot facts into an executable policy contract.
+### RepoCapsule
+
+A capsule turns the snapshot into a portable agent policy contract:
 
 ```yaml
 schema_version: 1
-repo_id: example-cli-4f92d8
-snapshot_head: 4f92d8a
+repo_id: example-4f92d8a3c610
 trust: quarantined
 
-stack:
-  languages: [python]
-  package_manager: uv
-
-commands:
-  test: uv run pytest
-  lint: uv run ruff check .
-  typecheck: uv run pyright
-
-skills:
-  - id: repo-test
-    source: .agents/skills/repo-test/SKILL.md
-    permissions: [read, exec-tests]
-
-agents:
-  - id: issue-fixer
-    trigger: verified failing issue with reproducible test
-
 verification:
-  completion_requires: [test, lint, typecheck]
+  completion_requires: [lint, test]
 
 loop:
   max_iterations: 12
   max_attempts_per_item: 3
   stall_limit: 3
-  max_wall_time_minutes: 120
 
 permissions:
   external_write: approval
@@ -183,77 +182,11 @@ permissions:
   secrets: vault-only
 ```
 
-Capsule invalidates when relevant facts change, including Git HEAD, command files, lockfiles, policy, or skill manifests.
+Capsules separate repository facts from machine policy. Repository instructions cannot grant tools, credentials, permissions, or external side effects.
 
-### Skill
+### Planned loop controller
 
-Skill packages reusable expertise or workflow logic.
-
-Required contract:
-
-- Stable ID and semantic version.
-- Positive and negative triggers.
-- Input and output schemas.
-- Required tools and minimum permissions.
-- Side-effect classification.
-- Completion and failure conditions.
-- Timeout and retry policy.
-- Tests and example invocations.
-
-Skill maps to runtime form by control needs:
-
-| Skill shape | Runtime form |
-|---|---|
-| Instructions or reference knowledge | Context asset |
-| Atomic deterministic operation | Tool |
-| Single state transition | Node |
-| Reusable multi-step workflow | Subgraph |
-| Open-ended reasoning with tools | Agent |
-
-### Agent
-
-Agent is autonomous role with narrow responsibility.
-
-Each agent declares:
-
-- Specific trigger and examples.
-- Cases where it must not trigger.
-- Minimum tool set.
-- Bounded analysis process.
-- Output schema.
-- Error and stop behavior.
-- Approval boundaries.
-
-Commands are user entry points. Agents are autonomous workers. Skills are capabilities loaded by either.
-
-### Loop session
-
-Loop session binds capsule to one goal and one isolated workspace.
-
-```python
-class LoopState(TypedDict):
-    session_id: str
-    repo_id: str
-    capsule_digest: str
-    goal: GoalContract
-    work_items: tuple[WorkItem, ...]
-    current_item_id: str | None
-    selected_skill_id: str | None
-    iteration: int
-    attempt: int
-    evidence: tuple[Evidence, ...]
-    verification: VerificationResult | None
-    failure_history: tuple[FailureRecord, ...]
-    budget: BudgetState
-    pending_approval: ApprovalRequest | None
-    stop_reason: str | None
-```
-
-Nodes return new state values. Shared state is never mutated across boundaries.
-
-## Loop controller
-
-Canonical graph:
+The target checkpointed graph is:
 
 ```text
 preflight
@@ -266,431 +199,89 @@ preflight
   -> continue | retry_changed_strategy | approve | complete | stop
 ```
 
-Controller owns state transition and completion. Worker owns assigned action only.
+Workers perform assigned actions. The controller owns state transitions. Independent verification owns the completion verdict.
 
-### Completion
+For schemas, retry rules, execution modes, persistence, and the full LangGraph design, read [ARCHITECTURE.md](ARCHITECTURE.md).
 
-Session completes only when:
-
-- Every acceptance contract passes independently.
-- Resulting diff stays inside approved scope.
-- Required artifacts exist and validate.
-- Repository gate passes from clean verifier context.
-- No required approval remains pending.
-
-Worker statement such as "tests pass" is evidence to inspect, not verdict.
-
-### Retry
-
-Retry must change at least one material input:
-
-- Strategy.
-- Skill.
-- Tool set.
-- Model or runtime.
-- Context selection.
-- Work-item decomposition.
-
-Same prompt, model, tools, and state cannot repeat after classified failure.
-
-### Stop conditions
-
-Session stops when any condition fires:
-
-1. Acceptance contracts pass.
-2. Wall-time, token, cost, or iteration budget ends.
-3. Same failure class occurs three times.
-4. Verified metrics show no progress across three cycles.
-5. Goal or scope digest changes unexpectedly.
-6. Required approval is unavailable.
-7. User-owned dirty files conflict with intended edits.
-8. Model or tool health fails with no approved fallback.
-9. Verifier cannot distinguish success from worker self-report.
-
-Stopped sessions remain resumable.
-
-## Execution modes
-
-| Mode | Workspace | Local writes | Git | External effects |
-|---|---|---:|---|---|
-| Discover | Original repository | No | Read-only | Denied |
-| Shadow | Isolated worktree | Yes | No commit | Denied |
-| Managed | Isolated worktree | Yes | Signed commits | Denied |
-| Review | Isolated worktree | Yes | Branch and draft PR | Approval |
-| Release | Approved target | Controlled | Push, merge, tag | Per-action approval |
-
-New repositories start in Discover. Promotion requires explicit trust and successful evidence gates.
-
-## Loop templates
-
-### Understand repository
-
-```text
-scan
-  -> analyze bounded batches
-  -> synthesize findings
-  -> verify repository-relative evidence
-  -> cover missed regions
-  -> stop
-```
-
-Best first implementation. Read-only risk profile. Clear verification contract.
-
-### Repair issue
-
-```text
-reproduce
-  -> write failing test
-  -> implement minimum fix
-  -> run focused checks
-  -> run full repository gate
-  -> review diff scope
-  -> stop
-```
-
-### Maintain dependencies
-
-```text
-inspect dependencies
-  -> choose one safe update
-  -> upgrade in worktree
-  -> test
-  -> security audit
-  -> stage proposal
-  -> stop
-```
-
-Dependency loop never auto-publishes.
-
-### Improve quality
-
-```text
-measure
-  -> choose worst verified hotspot
-  -> change one bounded area
-  -> remeasure
-  -> keep positive delta or revert session result
-  -> stop
-```
-
-Metrics come from repository contract, not model taste.
-
-### Process backlog
-
-```text
-triage
-  -> rank by evidence and scope
-  -> lease one work item
-  -> implement
-  -> verify
-  -> release lease
-  -> stop or select next item
-```
-
-One mutable work item per repository by default.
-
-## Verification model
-
-Independent verifier runs outside worker context.
-
-Verification responsibilities:
-
-- Execute declared commands and capture exit status.
-- Confirm worker did not hide or skip failures.
-- Compare assigned scope against actual diff.
-- Preserve pre-existing dirty files.
-- Validate structured artifacts.
-- Require repository-relative line evidence for analytical claims.
-- Trigger security review for sensitive surfaces.
-- Record evidence digest, producer, command, timestamp, and source revision.
-
-Mechanical checks run first. Model review cannot override failing mechanical checks.
-
-## Trust and security
+## Security model
 
 Repository content is untrusted input.
 
-### Instruction boundary
-
 - Machine policy outranks repository instructions.
-- Repository instructions cannot grant new tools or permissions.
-- Facts and instructions remain separate capsule fields.
-- Skill bodies load only after router selection and permission check.
-- External repository content cannot become system policy automatically.
+- Secrets never enter snapshots, capsules, browser responses, or logs.
+- External writes require explicit approval.
+- Destructive actions are denied by the default capsule.
+- The GUI uses a fixed route allowlist, strict CSP, Host validation, cross-site request rejection, and text-only rendering of repository-derived values.
+- The runtime adapter uses argument arrays with `shell=False`.
 
-### Secret boundary
-
-- Secret values never enter prompts, checkpoints, event ledgers, or reports.
-- Credentials come from approved vault integration only.
-- Session receives scoped capability, not broad environment dump.
-- Missing credential stops relevant action instead of requesting plaintext storage.
-
-### Side-effect boundary
-
-Human approval required before:
-
-- Push, merge, tag, release, or deployment.
-- Creating or modifying remote issues and pull requests.
-- External messages or publication.
-- Money movement or paid API activation.
-- Destructive file, database, or infrastructure action.
-- Credential rotation or account changes.
-
-## Scheduling and concurrency
-
-- One writer lease per repository.
-- Multiple read-only discovery sessions allowed.
-- One worktree per mutable session.
-- Cross-repository fan-out allowed for independent repositories.
-- Spawn depth, child count, time, and cost bounded.
-- Lease expiration never implies success.
-- Recovery re-scans workspace and reruns verification before continuing.
-
-## Persistence and audit
-
-Local-first storage:
-
-- SQLite for LangGraph checkpoints.
-- Append-only JSONL for events.
-- Content-addressed store for snapshots, prompts, outputs, and reports.
-- Git object IDs for input and result identity.
-
-Postgres becomes useful only for multi-host scheduling or concurrent fleet operation.
-
-Every transition records:
-
-- Session and repository identity.
-- Capsule and goal digests.
-- Node and attempt number.
-- Selected skill and permissions.
-- Tool call or command evidence.
-- State transition result.
-- Approval or stop reason.
-
-## Why Ouroboros appears throughout the design
-
-Ouroboros is mentioned because this design was created for an environment where it already provides several expensive primitives:
-
-- Specification-first `Seed` contracts.
-- Append-only execution ledger.
-- Runtime adapters for multiple coding harnesses.
-- Evaluation pipeline.
-- Resume and recovery semantics.
-- Plugin model for domain workflows.
-
-Reusing those primitives avoids creating a second specification engine and second runtime router.
-
-Ouroboros is not project identity. Repository Loop Agent Harness owns different domain:
-
-| Component | Responsibility |
-|---|---|
-| Repository Loop Agent Harness | Compile repositories into governed capsules and run repository loops |
-| Ouroboros | Specify goals, record execution, evaluate results, route runtimes |
-| Agent Hub | Discover and authorize external capabilities |
-| LangGraph | Execute checkpointed state machine |
-| Worker runtime | Perform one assigned action |
-
-Recommended first build is an Ouroboros `repo-loop` plugin plus small portable `repo-capsule` library. Core contracts should depend on protocols, not Ouroboros internals. An independent deployment can replace `OuroborosAdapter` without changing capsule or loop schemas.
-
-Repeated mention therefore means "reuse available substrate," not "rename this project Ouroboros" or "make Ouroboros mandatory forever."
-
-## Existing-system boundaries
-
-| Existing system | Reuse | Do not duplicate |
-|---|---|---|
-| Agent Hub | Tool discovery, trust, caller identity, policy, redaction | MCP registry copies |
-| Ouroboros | Seed, ledger, adapters, evaluation, resumable semantics | Specification engine |
-| Ralph-style watchdog | Budgets, max cycles, restart supervision, stall detection | Product-cloning assumptions |
-| Hermes | Optional bounded workers and local-model lanes | Global orchestration authority |
-| Local agent manager | Work logs and fleet ownership | Runtime checkpoint database |
-
-## CLI, TUI, and GUI interfaces
-
-The read-only commands are implemented:
-
-```bash
-# Read-only compilation
-repo-loop discover /path/to/repository
-
-# Inspect generated capsule
-repo-loop capsule show /path/to/repository
-
-# Open interactive terminal dashboard
-repo-loop tui /path/to/repository
-
-# Open local browser inspection bench
-repo-loop gui /path/to/repository
-```
-
-Add `--json` to `discover` or `capsule show` for stable, machine-readable output.
-
-Runtime commands use an explicit adapter boundary:
-
-```bash
-# Configure a separately installed runtime adapter
-export REPO_LOOP_BACKEND="/path/to/repo-loop-runtime-adapter"
-
-# Run evidence-backed understanding loop
-repo-loop run understand /path/to/repository --mode discover
-
-# Run repair inside isolated worktree
-repo-loop run repair /path/to/repository --issue 123 --mode shadow
-
-# Resume exact checkpoint
-repo-loop resume SESSION_ID
-
-# Inspect status and evidence
-repo-loop status SESSION_ID
-```
-
-The wrapper forwards arguments as an array without shell interpolation. With no backend configured, runtime commands exit with `EX_UNAVAILABLE`; they never simulate a successful loop.
+Please report vulnerabilities privately through [GitHub Security Advisories](https://github.com/josephkehan-prog/repo-loop-harness/security/advisories/new). See [SECURITY.md](SECURITY.md).
 
 ## Repository layout
 
 ```text
 repo-loop-harness/
-├── README.md
-├── ARCHITECTURE.md
-├── repo-loop
-├── pyproject.toml
 ├── src/repo_loop/
-│   ├── __init__.py
-│   ├── __main__.py
-│   ├── backend.py
-│   ├── cli.py
-│   ├── discovery.py
-│   ├── gui.py
-│   ├── tui.py
-│   └── web/
-│       ├── app.css
-│       ├── app.js
-│       └── index.html
-├── tests/
-│   ├── test_cli.py
-│   ├── test_discovery.py
-│   ├── test_gui.py
-│   └── test_tui.py
-└── docs/
-    ├── testing/
-    ├── workflow.dot
-    ├── workflow.png
-    └── workflow.svg
+│   ├── discovery.py       # deterministic scanner and capsule compiler
+│   ├── cli.py             # command-line interface and runtime handoff
+│   ├── tui.py             # Textual dashboard
+│   ├── gui.py             # loopback HTTP server
+│   └── web/               # packaged HTML, CSS, and JavaScript
+├── tests/                 # unit, integration, TUI, GUI, and wrapper tests
+├── docs/                  # workflow chart and TDD evidence
+├── ARCHITECTURE.md        # complete runtime design
+└── pyproject.toml
 ```
-
-Current stack: Python 3.12+, the Python standard-library HTTP server, and Textual 8. The GUI has no web-framework, CDN, or JavaScript-package dependency. Runtime providers remain replaceable through the `REPO_LOOP_BACKEND` process boundary. LangGraph, Pydantic, and SQLite belong to the later checkpointed-runtime slice, not the read-only compiler.
-
-## Delivery plan
-
-### Slice 1: Read-only capsule compiler
-
-- [x] Implement `repo-loop discover <path>`.
-- [x] Implement `repo-loop capsule show <path>`.
-- [x] Add a read-only Textual dashboard.
-- [x] Add a loopback-only browser inspection bench.
-- [x] Produce deterministic snapshot and capsule digests.
-- [x] Use deterministic scanners only.
-- [x] Write nothing to target repository.
-- [ ] Expand scanners for repository instructions, ownership, and deployment surfaces.
-
-Acceptance:
-
-- Same repository revision produces same fact digests.
-- Every fact has evidence path.
-- Untrusted instructions cannot change policy.
 
 ## Development
 
 ```bash
 uv sync --extra dev
-uv run python -m unittest discover -s tests -v
 uv run ruff check .
 uv run coverage run -m unittest discover -s tests
-uv run coverage report
+uv run coverage report -m
+uv build
+uv export --locked --no-dev --no-emit-project --no-hashes | uvx pip-audit -r /dev/stdin
 ```
 
-The coverage gate is 80 percent. TDD evidence is recorded in [`docs/testing/cli-tui-wrapper.tdd.md`](docs/testing/cli-tui-wrapper.tdd.md) and [`docs/testing/gui.tdd.md`](docs/testing/gui.tdd.md).
+The test suite enforces an 80% branch-coverage floor. Current TDD evidence is recorded in [CLI/TUI tests](docs/testing/cli-tui-wrapper.tdd.md) and [GUI tests](docs/testing/gui.tdd.md).
 
-### Slice 2: Repository-understanding loop
+See [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
 
-- Add SQLite checkpoints and resume.
-- Analyze bounded batches.
-- Verify every finding against repository-relative lines.
-- Stop after 12 iterations or three zero-progress cycles.
+## Roadmap
 
-Acceptance:
+- [x] Deterministic read-only repository discovery
+- [x] Governed capsule compilation
+- [x] CLI, TUI, and local browser GUI
+- [x] Fail-closed runtime adapter boundary
+- [ ] Broader instruction, ownership, entry-point, and deployment scanners
+- [ ] SQLite checkpoints and resumable repository-understanding loop
+- [ ] LangGraph controller with independent verifier
+- [ ] Isolated worktree repair mode
+- [ ] MCP capability discovery and approval routing
+- [ ] Managed signed commits, review mode, and release gates
 
-- Restart resumes exact node.
-- Unsupported findings are dropped.
-- No source files change.
+## Frequently asked questions
 
-### Slice 3: Shadow issue repair
+### What is a repository agent harness?
 
-- Create isolated worktree.
-- Add reproduction and TDD loop.
-- Run independent full verification.
-- Prevent commit, push, and external effects.
+A repository agent harness supplies an AI coding agent with verified repository facts, bounded tools, explicit policy, stop conditions, and independent completion checks. It is the control layer around a model—not the model itself.
 
-Acceptance:
+### Does RepoLoop modify repositories?
 
-- User dirty files remain byte-identical.
-- Worker cannot mark task complete.
-- Full repository gate decides result.
+The current `discover`, `capsule`, `tui`, and `gui` interfaces are read-only. Planned mutation modes will use isolated worktrees and explicit promotion levels.
 
-### Slice 4: Managed promotion
+### Does RepoLoop use LangGraph today?
 
-- Allow signed local commits.
-- Add approval interrupt for branch push and draft PR.
-- Route capabilities through Agent Hub.
-- Write work log and user manual.
+Not yet. The capsule and state contracts are designed for a checkpointed LangGraph controller, but `0.1.0` ships the deterministic discovery layer first.
 
-Acceptance:
+### Is RepoLoop an Ouroboros fork?
 
-- Zero external action without recorded approval.
-- Every tool call has provenance and permission decision.
+No. RepoLoop is an independent repository-agent implementation inspired by Ouroboros concepts such as specification-first execution, ledgers, evaluation, runtime adapters, and resume semantics. The original Ouroboros project receives explicit credit in [ACKNOWLEDGEMENTS.md](ACKNOWLEDGEMENTS.md).
 
-## Project acceptance criteria
+### Why not load the entire repository into the model context?
 
-1. Restart resumes exact graph node without repeating completed side effects.
-2. Worker cannot approve its own result.
-3. Every successful session contains independently observed verifier output.
-4. Pre-existing dirty files remain unchanged unless explicitly assigned.
-5. Shadow mode performs no external writes.
-6. Same failure class three times stops session.
-7. Three zero-progress cycles produce `STALLED`.
-8. Every skill load and tool call records provenance and policy decision.
-9. Repository text cannot expand system policy or permissions.
-10. Unit, integration, and critical E2E coverage reaches at least 80 percent.
+Large undifferentiated prompts dilute constraints and provenance. RepoLoop compiles a small, deterministic capsule and pulls deeper context only when a selected task requires it.
 
-## Non-goals
+## Attribution and license
 
-- Autonomous production deployment.
-- Silent pull requests, issue comments, or external messages.
-- Global credential access.
-- Loading every skill into every worker.
-- Unbounded self-improvement.
-- Model-selected deletion or cleanup.
-- Treating green unit tests as release readiness.
-
-## First experiment
-
-Test three repository shapes:
-
-1. Pure library using understanding loop.
-2. Tested CLI using shadow repair loop.
-3. Documentation-heavy project using freshness loop.
-
-Measure:
-
-- Verified work items completed.
-- False completion rate.
-- Restart recovery.
-- Duplicate side effects.
-- Human approvals requested.
-- Scope violations.
-- Cost and wall time per verified result.
-
-Promotion gate: zero false completions and zero scope violations. Speed remains secondary.
-
-## Architecture reference
-
-Full design: [`ARCHITECTURE.md`](ARCHITECTURE.md).
+RepoLoop is MIT licensed. Architectural inspiration and third-party project credits are documented in [ACKNOWLEDGEMENTS.md](ACKNOWLEDGEMENTS.md). Copyright remains with each respective project and contributor.

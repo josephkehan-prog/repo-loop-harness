@@ -65,7 +65,7 @@ def build_dashboard_model(
 class RepoLoopApp(App[None]):
     """Read-only repository and capsule dashboard."""
 
-    TITLE = "Repository Loop Agent Harness"
+    TITLE = "RepoLoop"
     SUB_TITLE = "governed repository capsule"
     BINDINGS: ClassVar[list[tuple[str, str, str]]] = [
         ("q", "quit", "Quit"),

@@ -78,6 +78,7 @@ class GuiServerTests(unittest.TestCase):
             headers = response.headers
 
         self.assertIn('data-testid="repository-name"', html)
+        self.assertIn("RepoLoop", html)
         self.assertIn("Refresh repository", html)
         self.assertIn("Evidence ledger", html)
         self.assertIn("Policy boundary", html)

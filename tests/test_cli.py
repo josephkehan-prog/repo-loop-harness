@@ -32,6 +32,7 @@ class CliTests(unittest.TestCase):
 
         self.assertEqual(code, 0)
         self.assertEqual(stderr, "")
+        self.assertIn("RepoLoop", stdout)
         for command in (
             "discover",
             "capsule",
